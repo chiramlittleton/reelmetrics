@@ -1,0 +1,86 @@
+services:
+  postgres:
+    image: postgres:latest
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: reelmetrics_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:latest
+    container_name: redis_cache
+    restart: always
+    ports:
+      - "6379:6379"
+
+  zookeeper:
+    image: wurstmeister/zookeeper
+    container_name: zookeeper
+    restart: always
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: wurstmeister/kafka
+    container_name: kafka
+    restart: always
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_BROKER_ID: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    depends_on:
+      - zookeeper
+            
+  backend_python:
+    build: ./backend_python
+    container_name: backend_python
+    restart: always
+    depends_on:
+      - postgres
+      - redis
+      - kafka
+    ports:
+      - "8001:8001"
+    environment:
+      DATABASE_URL: "postgres://user:password@postgres:5432/reelmetrics_db"
+      REDIS_URL: "redis://redis:6379/0"
+      KAFKA_BROKER: "kafka:9092"
+
+  backend_go:
+    build: ./backend_go
+    container_name: backend_go
+    restart: always
+    depends_on:
+      - postgres
+      - redis
+      - kafka
+    ports:
+      - "8002:8002"
+    environment:
+      DATABASE_URL: "postgres://user:password@postgres:5432/reelmetrics_db"
+      REDIS_URL: "redis://redis:6379/0"
+      KAFKA_BROKER: "kafka:9092"
+
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    restart: always
+    depends_on:
+      - backend_python
+      - backend_go
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:
+    driver: local
