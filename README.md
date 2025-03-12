@@ -100,3 +100,18 @@ python event_simulator.py
 ## **📝 License**
 This project is licensed under the MIT License.
 
+
+### Screenshots
+
+Below are some screenshots of the application in action.
+
+#### 🎭 Theaters List
+![Theaters List](./screenshots/theaters_list.png)
+
+#### 🎬 Movies & Sales per Theater
+![Movies and Sales](./screenshots/movies_sales.png)
+
+#### 🏆 Top Theater by Revenue
+![Top Theater](./screenshots/top_theater.png)
+
+
