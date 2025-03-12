@@ -67,7 +67,6 @@ def create_kafka_topic():
         try:
             admin_client = KafkaAdminClient(bootstrap_servers=KAFKA_BROKER)
             topic = NewTopic(name=TOPIC, num_partitions=1, replication_factor=1)
-
             admin_client.create_topics([topic])
             print(f"✅ Created topic: {TOPIC}")
             return
@@ -96,11 +95,20 @@ def get_theater_id(theater_name):
         result = cur.fetchone()
         return result[0] if result else None
 
-def store_sale_in_redis(sale_id, sale_data):
-    """Store the sale record in Redis."""
-    redis_key = f"sale:{sale_id}"
-    REDIS_CONN.hmset(redis_key, sale_data)
-    print(f"✅ Sale stored in Redis: {redis_key}")
+def store_sale_in_redis(sale_id, theater_id, sale_date, sale_data):
+    """Store the sale record in Redis using lists."""
+    redis_key_theater = f"sales_theater:{theater_id}"
+    redis_key_date = f"sales_date:{sale_date}"
+
+    sale_json = json.dumps(sale_data)
+
+    # ✅ Append to sales by theater
+    REDIS_CONN.rpush(redis_key_theater, sale_json)
+
+    # ✅ Append to sales by date
+    REDIS_CONN.rpush(redis_key_date, sale_json)
+
+    print(f"✅ Sale stored in Redis lists: {redis_key_theater} & {redis_key_date}")
 
 def consume_messages():
     """Consume Kafka messages and write to PostgreSQL & Redis."""
@@ -136,7 +144,7 @@ def consume_messages():
 
         movie_title = event["movie_title"]
         theater_name = event["theater_name"]
-        sale_date = event["sale_date"]
+        sale_date = event["sale_date"][:10]  
         tickets_sold = event["tickets_sold"]
         ticket_price = event["ticket_price"]
 
@@ -159,7 +167,7 @@ def consume_messages():
                 )
                 sale_id = cur.fetchone()[0]
 
-                # Store the sale in Redis
+                # Store the sale in Redis using lists
                 sale_data = {
                     "movie_title": movie_title,
                     "theater_name": theater_name,
@@ -167,7 +175,7 @@ def consume_messages():
                     "tickets_sold": tickets_sold,
                     "ticket_price": ticket_price
                 }
-                store_sale_in_redis(sale_id, sale_data)
+                store_sale_in_redis(sale_id, theater_id, sale_date, sale_data)
 
                 print(f"✅ Inserted and cached sale: {event}")
         except psycopg2.OperationalError as e:

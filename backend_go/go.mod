@@ -1,10 +1,12 @@
-module reelmetrics_backend_go
+module backend
 
 go 1.24.0
 
 require (
 	github.com/go-redis/redis/v8 v8.11.5
+	github.com/gorilla/mux v1.8.1
 	github.com/jackc/pgx/v5 v5.7.2
+	github.com/rs/cors v1.11.1
 )
 
 require (

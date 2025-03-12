@@ -15,14 +15,12 @@ function App() {
   const [theaters, setTheaters] = useState([]);
   const [selectedTheater, setSelectedTheater] = useState(null);
   const [salesData, setSalesData] = useState({});
-  const [topTheater, setTopTheater] = useState(null);
   const [selectedDate, setSelectedDate] = useState("");
 
   useEffect(() => {
     // Clear selections when switching backends
     setSelectedTheater(null);
     setSalesData({});
-    setTopTheater(null);
     setSelectedDate(""); // Clear date selection
     fetchTheaters();
   }, [backend]);
@@ -41,16 +39,20 @@ function App() {
       setSelectedTheater(theaterId);
       const response = await axios.get(`${BACKENDS[backend]}/theaters/${theaterId}/movies`);
 
-      const salesArray = response.data?.data || response.data || [];
+      // ✅ Ensure we correctly extract sales data (supports both Go & Python backends)
+      const salesArray = Array.isArray(response.data?.data) ? response.data.data : response.data;
 
       const salesByDate = {};
       salesArray.forEach((sale) => {
-        if (!salesByDate[sale.sale_date]) {
-          salesByDate[sale.sale_date] = [];
+        const saleDate = sale.sale_date.split("T")[0]; // Normalize date format
+        if (!salesByDate[saleDate]) {
+          salesByDate[saleDate] = [];
         }
-        salesByDate[sale.sale_date].push({
-          title: sale.title,
-          ticket_sales: sale.ticket_sales,
+        salesByDate[saleDate].push({
+          title: sale.movie_title, // ✅ Ensure correct field name
+          tickets_sold: sale.tickets_sold, // ✅ Store ticket count
+          ticket_price: sale.ticket_price, // ✅ Store ticket price
+          revenue: sale.tickets_sold * sale.ticket_price, // ✅ Compute revenue
         });
       });
 
@@ -64,9 +66,15 @@ function App() {
     try {
       setSelectedDate(saleDate); // Update selected date
       const response = await axios.get(`${BACKENDS[backend]}/top-theater/${saleDate}`);
-      setTopTheater(response.data);
+
+      if (response.data?.theater && response.data?.revenue !== undefined) {
+        return response.data; // ✅ Correctly return structured response
+      }
+
+      return { message: "No sales data available" }; // ✅ Handle missing data case
     } catch (error) {
       console.error("Error fetching top theater", error);
+      return { message: "Error fetching data" };
     }
   };
 
@@ -77,11 +85,7 @@ function App() {
       <BackendSelector backend={backend} setBackend={setBackend} />
       <TheaterList theaters={theaters} fetchSalesForTheater={fetchSalesForTheater} />
       <SalesData selectedTheater={selectedTheater} salesData={salesData} />
-      <TopTheater 
-        fetchTopTheater={fetchTopTheater} 
-        topTheater={topTheater} 
-        selectedDate={selectedDate} 
-      />
+      <TopTheater fetchTopTheater={fetchTopTheater} selectedDate={selectedDate} />
     </div>
   );
 }

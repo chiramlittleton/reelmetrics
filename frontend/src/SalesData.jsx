@@ -13,7 +13,8 @@ function SalesData({ selectedTheater, salesData }) {
                 <ul>
                   {movies.map((movie, index) => (
                     <li key={index}>
-                      {movie.title} - ${movie.ticket_sales.toFixed(2)}
+                      {movie.title} - {movie.tickets_sold} tickets @ ${movie.ticket_price.toFixed(2)} 
+                      {" "} = <strong>${movie.revenue.toFixed(2)}</strong>
                     </li>
                   ))}
                 </ul>

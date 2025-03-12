@@ -74,3 +74,43 @@ def get_movies_by_theater(theater_id: int):
     redis_client.setex(redis_key, 300, json.dumps(movies, default=decimal_to_float))
 
     return movies
+
+@app.get("/top-theater/{sale_date}")
+def get_top_theater(sale_date: str):
+    """Fetch the top theater by sales on a given date, using Redis cache if available"""
+
+    redis_key = f"top_theater:{sale_date}"
+
+    # Check Redis cache first
+    cached_data = redis_client.get(redis_key)
+    if cached_data:
+        print(f"✅ Cache hit for {redis_key}")
+        return json.loads(cached_data)
+
+    print(f"❌ Cache miss for {redis_key}, querying PostgreSQL...")
+
+    # Query PostgreSQL for top theater
+    with DB_CONN.cursor() as cur:
+        cur.execute(
+            """
+            SELECT t.name, SUM(s.tickets_sold * s.ticket_price) AS total_revenue
+            FROM theaters t
+            JOIN sales s ON t.id = s.theater_id
+            WHERE s.sale_date = %s
+            GROUP BY t.name
+            ORDER BY total_revenue DESC
+            LIMIT 1;
+            """,
+            (sale_date,)
+        )
+
+        result = cur.fetchone()
+        if not result:
+            raise HTTPException(status_code=404, detail="No sales data found for this date.")
+
+        top_theater = {"theater": result[0], "revenue": float(result[1])}
+
+    # Store result in Redis with expiration (e.g., 300 seconds)
+    redis_client.setex(redis_key, 300, json.dumps(top_theater, default=decimal_to_float))
+
+    return top_theater
