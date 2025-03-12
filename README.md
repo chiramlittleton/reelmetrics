@@ -9,14 +9,11 @@ graph TD;
     B -->|Forwards events| C[Event Consumer];
     C -->|Writes sales data| D[PostgreSQL];
     C -->|Updates cache| E[Redis];
-    D -->|Stores theaters, movies, and sales data| F[PostgreSQL];
-    E -->|Caches frequently accessed data| G[Redis];
-    H[Frontend] -->|User selects backend| I[Python Backend];
-    H -->|User selects backend| J[Go Backend];
-    I -->|Fetches from Redis & PostgreSQL| F;
-    J -->|Fetches from Redis & PostgreSQL| F;
-    I -->|Returns theaters & sales data| H;
-    J -->|Returns theaters & sales data| H;
+    D & E -->|Provide data| F[Python Backend];
+    D & E -->|Provide data| G[Go Backend];
+    F & G -->|Return data| H[Frontend];
+    H -->|User selects backend| F;
+    H -->|User selects backend| G;
 ```
 
 ## **🛠️ Tech Stack**
