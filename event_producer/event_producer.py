@@ -3,15 +3,13 @@ import random
 import time
 from kafka import KafkaProducer
 
-KAFKA_BROKER = "localhost:9092"
+KAFKA_BROKER = "127.0.0.1:9093"
 TOPIC = "ticket_purchases"
 
 THEATERS = [
-    "Regal Cinemas",
-    "AMC Theaters",
-    "Cinemark",
-    "Edwards Theaters",
-    "Loews Cineplex"
+    "AMC Century City",
+    "Regal LA Live",
+    "Cinemark Playa Vista"
 ]
 
 MOVIES = [
@@ -20,14 +18,10 @@ MOVIES = [
     "The Matrix",
     "Pulp Fiction",
     "The Lion King",
-    "Forrest Gump",
-    "Home Alone",
-    "Independence Day",
-    "Terminator 2: Judgment Day",
-    "Toy Story"
+    "Forrest Gump"
 ]
 
-DATES = ["1995-07-14", "1996-11-22", "1997-12-19", "1998-07-24", "1999-03-31"]
+DATES = ["2025-03-11", "2025-03-12", "2025-03-13"]
 
 TICKET_PRICE_RANGE = (5.00, 15.00)
 
@@ -38,15 +32,15 @@ producer = KafkaProducer(
 
 def generate_ticket_purchase():
     """Generate a random ticket purchase event."""
-    theater = random.choice(THEATERS)
-    movie = random.choice(MOVIES)
+    theater_name = random.choice(THEATERS)  # Renamed to match database schema
+    movie_title = random.choice(MOVIES)  # Renamed to match database schema
     sale_date = random.choice(DATES)
     ticket_price = round(random.uniform(*TICKET_PRICE_RANGE), 2)  # Random ticket price between $5 - $15
     tickets_sold = random.randint(1, 5)  # Random number of tickets per transaction (1-5)
 
     return {
-        "theater": theater,
-        "movie": movie,
+        "theater_name": theater_name,  # Match database column name
+        "movie_title": movie_title,  # Match database column name
         "sale_date": sale_date,
         "ticket_price": ticket_price,
         "tickets_sold": tickets_sold
