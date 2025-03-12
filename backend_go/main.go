@@ -22,11 +22,13 @@ var redisClient *redis.Client
 func init() {
 	var err error
 
+	// Connect to PostgreSQL
 	db, err = sql.Open("pgx", "postgres://user:password@postgres:5432/reelmetrics_db?sslmode=disable")
 	if err != nil {
 		log.Fatal("❌ Failed to connect to PostgreSQL:", err)
 	}
 
+	// Connect to Redis
 	redisClient = redis.NewClient(&redis.Options{
 		Addr: "redis:6379",
 	})
@@ -58,23 +60,26 @@ func getMoviesByTheater(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	theaterID := vars["theater_id"]
 
-	cacheKey := fmt.Sprintf("theater_%s_movies", theaterID)
+	cacheKey := fmt.Sprintf("theater:%s:sales", theaterID)
 
 	// Check Redis first
 	val, err := redisClient.Get(ctx, cacheKey).Result()
 	if err == nil {
+		log.Printf("✅ Cache hit for %s", cacheKey)
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(fmt.Sprintf(`{"source": "cache", "data": %s}`, val)))
 		return
 	}
 
+	log.Printf("❌ Cache miss for %s, querying PostgreSQL...", cacheKey)
+
 	// Query PostgreSQL if not cached
 	query := `
-		SELECT m.id, m.title, COALESCE(SUM(s.tickets_sold * s.ticket_price), 0) AS revenue
+		SELECT m.id, m.title, s.sale_date, COALESCE(SUM(s.tickets_sold * s.ticket_price), 0) AS revenue
 		FROM movies m
-		LEFT JOIN sales s ON m.id = s.movie_id
-		WHERE m.theater_id = $1
-		GROUP BY m.id, m.title;
+		JOIN sales s ON m.id = s.movie_id
+		WHERE s.theater_id = $1
+		GROUP BY m.id, m.title, s.sale_date;
 	`
 	rows, err := db.Query(query, theaterID)
 	if err != nil {
@@ -87,12 +92,18 @@ func getMoviesByTheater(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var id int
 		var title string
+		var saleDate string
 		var revenue float64
-		rows.Scan(&id, &title, &revenue)
-		movies = append(movies, map[string]interface{}{"id": id, "title": title, "ticket_sales": revenue})
+		rows.Scan(&id, &title, &saleDate, &revenue)
+		movies = append(movies, map[string]interface{}{
+			"id":           id,
+			"title":        title,
+			"sale_date":    saleDate,
+			"ticket_sales": revenue,
+		})
 	}
 
-	// Store result in Redis
+	// Store result in Redis with 5-minute expiration
 	jsonData, _ := json.Marshal(movies)
 	redisClient.Set(ctx, cacheKey, jsonData, 5*time.Minute)
 
@@ -100,27 +111,28 @@ func getMoviesByTheater(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonData)
 }
 
-// Get top theater by revenue
 func getTopTheater(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	date := vars["date"]
 
-	cacheKey := "top_theater_" + date
+	cacheKey := fmt.Sprintf("top_theater:%s", date)
 
 	// Check Redis first
 	val, err := redisClient.Get(ctx, cacheKey).Result()
 	if err == nil {
+		log.Printf("✅ Cache hit for %s", cacheKey)
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(fmt.Sprintf(`{"source": "cache", "data": %s}`, val)))
 		return
 	}
 
+	log.Printf("❌ Cache miss for %s, querying PostgreSQL...", cacheKey)
+
 	// Query PostgreSQL if not cached
 	query := `
 		SELECT t.name, COALESCE(SUM(s.tickets_sold * s.ticket_price), 0) AS total_revenue
 		FROM sales s
-		JOIN movies m ON s.movie_id = m.id
-		JOIN theaters t ON m.theater_id = t.id
+		JOIN theaters t ON s.theater_id = t.id
 		WHERE s.sale_date = $1
 		GROUP BY t.name
 		ORDER BY total_revenue DESC
@@ -136,7 +148,7 @@ func getTopTheater(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Store result in Redis
+	// Store result in Redis with 5-minute expiration
 	result := map[string]interface{}{"theater": theater, "revenue": revenue}
 	jsonData, _ := json.Marshal(result)
 	redisClient.Set(ctx, cacheKey, jsonData, 5*time.Minute)

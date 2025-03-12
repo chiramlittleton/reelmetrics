@@ -42,16 +42,35 @@ def get_theaters():
 @app.get("/theaters/{theater_id}/movies")
 def get_movies_by_theater(theater_id: int):
     """Fetch movies & sales for a theater, using Redis cache if available"""
+
+    redis_key = f"theater:{theater_id}:sales"
+    
+    # Check Redis cache first
+    cached_data = redis_client.get(redis_key)
+    if cached_data:
+        print(f"✅ Cache hit for {redis_key}")
+        return json.loads(cached_data)
+
+    print(f"❌ Cache miss for {redis_key}, querying PostgreSQL...")
+
+    # Fetch from PostgreSQL if not cached
     with DB_CONN.cursor() as cur:
         cur.execute(
             """
             SELECT m.id, m.title, s.sale_date, SUM(s.tickets_sold * s.ticket_price) AS revenue
             FROM movies m
             JOIN sales s ON m.id = s.movie_id
-            WHERE m.theater_id = %s
+            WHERE s.theater_id = %s
             GROUP BY m.id, m.title, s.sale_date;
             """,
             (theater_id,)
         )
-        movies = [{"id": row[0], "title": row[1], "sale_date": str(row[2]), "ticket_sales": float(row[3])} for row in cur.fetchall()]
+        movies = [
+            {"id": row[0], "title": row[1], "sale_date": str(row[2]), "ticket_sales": float(row[3])}
+            for row in cur.fetchall()
+        ]
+
+    # Store result in Redis with an expiration time (e.g., 300 seconds)
+    redis_client.setex(redis_key, 300, json.dumps(movies, default=decimal_to_float))
+
     return movies
