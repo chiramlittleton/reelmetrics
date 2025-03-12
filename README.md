@@ -5,16 +5,13 @@ ReelMetrics is a distributed system that processes theater ticket sales. It leve
 ## **🚀 Architecture Overview**
 ```mermaid
 graph TD;
-    A[Frontend] -->|User selects backend| B[Python Backend];
-    A -->|User selects backend| C[Go Backend];
-    B -->|Fetches from PostgreSQL| D[PostgreSQL];
-    C -->|Fetches from PostgreSQL| D;
-    B -->|Returns theaters & sales data| A;
-    C -->|Returns theaters & sales data| A;
-    
-    E[Event Generator] -.->|Planned Kafka Integration| F[Kafka];
-    F -.->|Planned Streaming| D;
-    G[Event Consumer] -.->|Planned Processing| D;
+    A[Frontend (React)] -->|API Requests| B[Backend (FastAPI & Go)];
+    B -->|Stores Data| C[PostgreSQL];
+    B -->|Caches Data| D[Redis];
+    E[Event Generator] -->|Publishes Events| F[Kafka];
+    F -->|Consumes Events| G[Event Consumer];
+    G -->|Writes Data| C;
+    G -->|Updates Cache| D;
 ```
 
 > **Note:** The intended design included an event generator and event consumer to simulate Kafka messages, but this was not fully implemented. The Python backend does not currently use Redis caching.
