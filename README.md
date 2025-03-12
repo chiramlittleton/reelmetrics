@@ -5,7 +5,7 @@ ReelMetrics is a distributed system that processes theater ticket sales. It leve
 ## **🚀 Architecture Overview**
 ```mermaid
 graph TD;
-    A[Frontend (React)] -->|API Requests| B[Backend (FastAPI & Go)];
+    A[Frontend] -->|API Requests| B[Backend (FastAPI & Go)];
     B -->|Stores Data| C[PostgreSQL];
     B -->|Caches Data| D[Redis];
     E[Event Generator] -->|Publishes Events| F[Kafka];
