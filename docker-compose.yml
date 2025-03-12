@@ -11,6 +11,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
 
   redis:
     image: redis:latest
@@ -39,6 +40,9 @@ services:
       KAFKA_BROKER_ID: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true" 
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_MESSAGE_MAX_BYTES: 200000000  
+      KAFKA_REPLICA_FETCH_MAX_BYTES: 200000000
+      KAFKA_SOCKET_REQUEST_MAX_BYTES: 200000000
     depends_on:
       - zookeeper
             
@@ -70,6 +74,22 @@ services:
     environment:
       DATABASE_URL: "postgres://user:password@postgres:5432/reelmetrics_db"
       REDIS_URL: "redis://redis:6379/0"
+      KAFKA_BROKER: "kafka:9092"
+
+  event_consumer:
+    build: ./event_consumer
+    container_name: event_consumer
+    restart: always
+    depends_on:
+      - postgres
+      - redis
+      - kafka
+    environment:
+      POSTGRES_DB: "reelmetrics_db"
+      POSTGRES_USER: "user"
+      POSTGRES_PASSWORD: "password"
+      POSTGRES_HOST: "postgres"
+      REDIS_HOST: "redis"
       KAFKA_BROKER: "kafka:9092"
 
   frontend:

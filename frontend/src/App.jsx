@@ -10,7 +10,8 @@ function App() {
   const [backend, setBackend] = useState("python");
   const [theaters, setTheaters] = useState([]);
   const [selectedTheater, setSelectedTheater] = useState(null);
-  const [movies, setMovies] = useState([]);
+  const [salesData, setSalesData] = useState({});
+  const [topTheater, setTopTheater] = useState(null);
 
   useEffect(() => {
     fetchTheaters();
@@ -25,13 +26,34 @@ function App() {
     }
   };
 
-  const fetchMoviesForTheater = async (theaterId) => {
+  const fetchSalesForTheater = async (theaterId) => {
     try {
       setSelectedTheater(theaterId);
       const response = await axios.get(`${BACKENDS[backend]}/theaters/${theaterId}/movies`);
-      setMovies(response.data);
+      
+      const salesByDate = {};
+      response.data.forEach((sale) => {
+        if (!salesByDate[sale.sale_date]) {
+          salesByDate[sale.sale_date] = [];
+        }
+        salesByDate[sale.sale_date].push({
+          title: sale.title,
+          ticket_sales: sale.ticket_sales
+        });
+      });
+
+      setSalesData(salesByDate);
     } catch (error) {
-      console.error("Error fetching movies", error);
+      console.error("Error fetching sales", error);
+    }
+  };
+
+  const fetchTopTheater = async (saleDate) => {
+    try {
+      const response = await axios.get(`${BACKENDS[backend]}/top-theater/${saleDate}`);
+      setTopTheater(response.data);
+    } catch (error) {
+      console.error("Error fetching top theater", error);
     }
   };
 
@@ -59,7 +81,7 @@ function App() {
         {theaters.length > 0 ? (
           <ul>
             {theaters.map((theater) => (
-              <li key={theater.id} onClick={() => fetchMoviesForTheater(theater.id)}>
+              <li key={theater.id} onClick={() => fetchSalesForTheater(theater.id)}>
                 {theater.name}
               </li>
             ))}
@@ -71,25 +93,40 @@ function App() {
 
       {selectedTheater && (
         <div>
-          <h2>Movies & Ticket Sales</h2>
-          {movies.length > 0 ? (
-            <ul>
-              {movies.map((movie) => (
-                <li key={movie.id}>
-                  {movie.title} - ${movie.ticket_sales.toFixed(2)}
-                </li>
-              ))}
-              <li>
-                <strong>
-                  Total Sales: ${movies.reduce((sum, m) => sum + m.ticket_sales, 0).toFixed(2)}
-                </strong>
-              </li>
-            </ul>
+          <h2>Sales Data</h2>
+          {Object.keys(salesData).length > 0 ? (
+            Object.entries(salesData).map(([date, movies]) => (
+              <div key={date}>
+                <h3>{date}</h3>
+                <ul>
+                  {movies.map((movie, index) => (
+                    <li key={index}>
+                      {movie.title} - ${movie.ticket_sales.toFixed(2)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))
           ) : (
-            <p>No movies found for this theater.</p>
+            <p>No sales data found for this theater.</p>
           )}
         </div>
       )}
+
+      <div>
+        <h2>Top Theater by Sales</h2>
+        <input
+          type="date"
+          onChange={(e) => fetchTopTheater(e.target.value)}
+        />
+        {topTheater ? (
+          <p>
+            <strong>{topTheater.theater}</strong> - ${topTheater.revenue.toFixed(2)}
+          </p>
+        ) : (
+          <p>Select a date to see the top theater.</p>
+        )}
+      </div>
     </div>
   );
 }

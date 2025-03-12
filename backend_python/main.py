@@ -1,24 +1,37 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 import psycopg2
 import redis
 import json
 import os
+from decimal import Decimal
+from typing import List, Dict
 
 app = FastAPI()
 
-# PostgreSQL connection
-DB_CONN = psycopg2.connect(
-    dbname=os.getenv("POSTGRES_DB", "reelmetrics"),
-    user=os.getenv("POSTGRES_USER", "postgres"),
-    password=os.getenv("POSTGRES_PASSWORD", "password"),
-    host=os.getenv("POSTGRES_HOST", "postgres"),
-    port=os.getenv("POSTGRES_PORT", "5432")
+# Add CORS Middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-# Redis connection
+# PostgreSQL Connection
+DATABASE_URL = os.getenv("DATABASE_URL", "postgres://user:password@postgres:5432/reelmetrics_db")
+DB_CONN = psycopg2.connect(DATABASE_URL)
+
+# Redis Connection
 redis_client = redis.Redis(host=os.getenv("REDIS_HOST", "redis"), port=6379, decode_responses=True)
 
-@app.get("/theaters")
+def decimal_to_float(obj):
+    """Convert Decimal objects to float for JSON serialization."""
+    if isinstance(obj, Decimal):
+        return float(obj)
+    raise TypeError(f"Type {type(obj)} not serializable")
+
+@app.get("/theaters", response_model=List[Dict])
 def get_theaters():
     """Fetch all theaters from PostgreSQL"""
     with DB_CONN.cursor() as cur:
@@ -29,27 +42,16 @@ def get_theaters():
 @app.get("/theaters/{theater_id}/movies")
 def get_movies_by_theater(theater_id: int):
     """Fetch movies & sales for a theater, using Redis cache if available"""
-    cache_key = f"theater:{theater_id}:movies"
-    cached_data = redis_client.get(cache_key)
-
-    if cached_data:
-        return json.loads(cached_data)  # Return cached data
-
-    # Fetch from PostgreSQL if not cached
     with DB_CONN.cursor() as cur:
         cur.execute(
             """
-            SELECT m.id, m.title, SUM(s.tickets_sold * s.ticket_price) AS revenue
+            SELECT m.id, m.title, s.sale_date, SUM(s.tickets_sold * s.ticket_price) AS revenue
             FROM movies m
             JOIN sales s ON m.id = s.movie_id
             WHERE m.theater_id = %s
-            GROUP BY m.id, m.title;
+            GROUP BY m.id, m.title, s.sale_date;
             """,
             (theater_id,)
         )
-        movies = [{"id": row[0], "title": row[1], "ticket_sales": row[2]} for row in cur.fetchall()]
-
-    # Cache the result in Redis
-    redis_client.setex(cache_key, 60, json.dumps(movies))  # Cache for 60 seconds
-
+        movies = [{"id": row[0], "title": row[1], "sale_date": str(row[2]), "ticket_sales": float(row[3])} for row in cur.fetchall()]
     return movies

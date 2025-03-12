@@ -10,7 +10,9 @@ import (
 	"time"
 
 	"github.com/go-redis/redis/v8"
+	"github.com/gorilla/mux"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/rs/cors"
 )
 
 var ctx = context.Background()
@@ -20,19 +22,18 @@ var redisClient *redis.Client
 func init() {
 	var err error
 
-	// Connect to PostgreSQL
-	db, err = sql.Open("pgx", "postgres://user:password@postgres:5432/reelmetrics_db")
+	db, err = sql.Open("pgx", "postgres://user:password@postgres:5432/reelmetrics_db?sslmode=disable")
 	if err != nil {
 		log.Fatal("❌ Failed to connect to PostgreSQL:", err)
 	}
 
-	// Connect to Redis
 	redisClient = redis.NewClient(&redis.Options{
 		Addr: "redis:6379",
 	})
+
+	log.Println("✅ Connected to PostgreSQL & Redis")
 }
 
-// Get all theaters
 func getTheaters(w http.ResponseWriter, r *http.Request) {
 	rows, err := db.Query("SELECT id, name FROM theaters;")
 	if err != nil {
@@ -53,10 +54,11 @@ func getTheaters(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(theaters)
 }
 
-// Get movies & sales for a theater (cached in Redis)
 func getMoviesByTheater(w http.ResponseWriter, r *http.Request) {
-	theaterID := r.URL.Path[len("/theaters/"):]
-	cacheKey := "theater_" + theaterID + "_movies"
+	vars := mux.Vars(r)
+	theaterID := vars["theater_id"]
+
+	cacheKey := fmt.Sprintf("theater_%s_movies", theaterID)
 
 	// Check Redis first
 	val, err := redisClient.Get(ctx, cacheKey).Result()
@@ -68,12 +70,12 @@ func getMoviesByTheater(w http.ResponseWriter, r *http.Request) {
 
 	// Query PostgreSQL if not cached
 	query := `
-    SELECT m.id, m.title, SUM(s.tickets_sold * s.ticket_price) AS revenue
-    FROM movies m
-    JOIN sales s ON m.id = s.movie_id
-    WHERE m.theater_id = $1
-    GROUP BY m.id, m.title;
-    `
+		SELECT m.id, m.title, COALESCE(SUM(s.tickets_sold * s.ticket_price), 0) AS revenue
+		FROM movies m
+		LEFT JOIN sales s ON m.id = s.movie_id
+		WHERE m.theater_id = $1
+		GROUP BY m.id, m.title;
+	`
 	rows, err := db.Query(query, theaterID)
 	if err != nil {
 		http.Error(w, `{"error": "Database error"}`, http.StatusInternalServerError)
@@ -100,7 +102,9 @@ func getMoviesByTheater(w http.ResponseWriter, r *http.Request) {
 
 // Get top theater by revenue
 func getTopTheater(w http.ResponseWriter, r *http.Request) {
-	date := r.URL.Path[len("/top-theater/"):]
+	vars := mux.Vars(r)
+	date := vars["date"]
+
 	cacheKey := "top_theater_" + date
 
 	// Check Redis first
@@ -113,14 +117,15 @@ func getTopTheater(w http.ResponseWriter, r *http.Request) {
 
 	// Query PostgreSQL if not cached
 	query := `
-    SELECT t.name, SUM(s.tickets_sold * s.ticket_price) AS total_revenue
-    FROM sales s
-    JOIN theaters t ON s.theater_id = t.id
-    WHERE s.sale_date = $1
-    GROUP BY t.name
-    ORDER BY total_revenue DESC
-    LIMIT 1;
-    `
+		SELECT t.name, COALESCE(SUM(s.tickets_sold * s.ticket_price), 0) AS total_revenue
+		FROM sales s
+		JOIN movies m ON s.movie_id = m.id
+		JOIN theaters t ON m.theater_id = t.id
+		WHERE s.sale_date = $1
+		GROUP BY t.name
+		ORDER BY total_revenue DESC
+		LIMIT 1;
+	`
 	row := db.QueryRow(query, date)
 	var theater string
 	var revenue float64
@@ -141,10 +146,21 @@ func getTopTheater(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	http.HandleFunc("/theaters", getTheaters)
-	http.HandleFunc("/theaters/", getMoviesByTheater)
-	http.HandleFunc("/top-theater/", getTopTheater)
+	router := mux.NewRouter()
+
+	// Define Routes
+	router.HandleFunc("/theaters", getTheaters).Methods("GET")
+	router.HandleFunc("/theaters/{theater_id}/movies", getMoviesByTheater).Methods("GET")
+	router.HandleFunc("/top-theater/{date}", getTopTheater).Methods("GET")
+
+	// Enable CORS
+	handler := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"}, // Allow all (or restrict to ["http://localhost:3000"])
+		AllowCredentials: true,
+		AllowedMethods:   []string{"GET", "POST"},
+		AllowedHeaders:   []string{"*"},
+	}).Handler(router)
 
 	log.Println("🚀 Go backend running on port 8002...")
-	http.ListenAndServe(":8002", nil)
+	http.ListenAndServe(":8002", handler)
 }
