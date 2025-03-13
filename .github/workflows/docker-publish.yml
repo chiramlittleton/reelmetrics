@@ -35,9 +35,11 @@ jobs:
           python-version: '3.10' # Update as needed
       - name: Install Python Dependencies
         run: |
+          python -m pip install --upgrade pip
+          pip install pytest
           if [ -f "requirements.txt" ]; then
             pip install -r requirements.txt
-          fi
+          fi  
       - name: Run Python Tests
         run: |
           if [ -d "./backend_python" ]; then
