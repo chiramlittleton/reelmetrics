@@ -1,8 +1,13 @@
 # ReelMetrics
 
-ReelMetrics is a distributed system that processes theater ticket sales in real time. It leverages **Kafka** for event streaming, **PostgreSQL** for persistent storage, and **Redis** for caching frequently accessed data. The system includes both **Python (FastAPI)** and **Go** backends to demonstrate multi-language interoperability.
+**ReelMetrics** is a real-time ticket sales tracking system designed for movie theaters. It captures and processes ticket purchases as they happen, ensuring up-to-date sales data and analytics. The system is built with a **modular, microservices-based architecture**, using **Kafka** for seamless event communication, **PostgreSQL** for reliable data storage, and **Redis** for quick lookups. With both **Python (FastAPI)** and **Go** backends, ReelMetrics showcases a flexible, multi-language approach while delivering fast and accurate insights into theater performance and movie sales.
 
-## **🚀 Architecture Overview**
+
+## Architecture Overview
+ReelMetrics follows a microservices-based, event-driven design, where Kafka streams ticket sales to a consumer that updates PostgreSQL and Redis. The Go and Python (FastAPI) backends query both databases, exposing APIs for theater and sales data. A React frontend dynamically switches between backends and fetches analytics.
+
+By separating event ingestion, storage, caching, and APIs, the system ensures efficient data flow, low-latency queries, and scalability.
+
 ```mermaid
 graph TD;
     A[Event Generator] -->|Sends ticket sales events| B[Kafka];
@@ -16,8 +21,7 @@ graph TD;
     H -->|User selects backend| G;
 ```
 
-<details>
-  <summary><h2>🛠️ Tech Stack (Click to Expand)</h2></summary>
+## 🛠️ Tech Stack
 
   - **Backend (Python - FastAPI)**: Exposes APIs to fetch theaters & movie sales.
   - **Backend (Go)**: Alternative implementation for fetching the same data.
@@ -25,7 +29,20 @@ graph TD;
   - **Redis**: Caches frequently accessed data (e.g., top theaters, movie sales).
   - **Kafka**: Streams real-time ticket purchase events.
   - **Frontend (React)**: Displays theaters, movies, and sales statistics.
-</details>
+
+## **🧩 Project Components**
+
+### **🎟️  Event Generator**
+- Generates **random ticket sales events**.
+- Publishes events to **Kafka**.
+
+### **🛠️ Backends (Python & Go)**
+- **Fetch theaters & movie sales from PostgreSQL**.
+- **Cache results in Redis** to optimize performance.
+
+### **🌐 Frontend (React)**
+- Lets users select between **Python & Go backends**.
+- Displays **real-time revenue statistics**.
 
 ## **📦 Setup & Installation**
 
@@ -62,20 +79,6 @@ curl -X GET http://localhost:8001/theaters/1/movies
 curl -X GET http://localhost:8002/top-theater/2024-05-10
 ```
 
-## **🎬 Project Components**
-
-### **1️⃣ Event Generator**
-- Generates **random ticket sales events**.
-- Publishes events to **Kafka**.
-
-### **2️⃣ Backends (Python & Go)**
-- **Fetch theaters & movie sales from PostgreSQL**.
-- **Cache results in Redis** to optimize performance.
-
-### **3️⃣ Frontend (React)**
-- Lets users select between **Python & Go backends**.
-- Displays **real-time revenue statistics**.
-
 ## **🔧 Development**
 ### **Run Python Backend Locally**
 ```bash
@@ -95,7 +98,7 @@ cd utils
 python event_simulator.py
 ```
 
-## **🚀 Next Steps**
+## **📌 Next Steps**
 - Add **user authentication** to restrict access.
 - Implement **real-time WebSockets** for live sales updates.
 - Deploy on **AWS using Kubernetes**.
@@ -113,5 +116,3 @@ Below are some screenshots of the application in action.
 
 #### 🏆 Top Theater by Revenue
 ![Top Theater](./screenshots/top_theater.png)
-
-
