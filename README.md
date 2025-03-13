@@ -16,13 +16,16 @@ graph TD;
     H -->|User selects backend| G;
 ```
 
-## **🛠️ Tech Stack**
-- **Backend (Python - FastAPI)**: Exposes APIs to fetch theaters & movie sales.
-- **Backend (Go)**: Alternative implementation for fetching the same data.
-- **PostgreSQL**: Stores theaters, movies, and sales data.
-- **Redis**: Caches frequently accessed data (e.g., top theaters, movie sales).
-- **Kafka**: Streams real-time ticket purchase events.
-- **Frontend (React)**: Displays theaters, movies, and sales statistics.
+<details>
+  <summary>## 🛠️ Tech Stack (Click to Expand)</summary>
+
+  - **Backend (Python - FastAPI)**: Exposes APIs to fetch theaters & movie sales.
+  - **Backend (Go)**: Alternative implementation for fetching the same data.
+  - **PostgreSQL**: Stores theaters, movies, and sales data.
+  - **Redis**: Caches frequently accessed data (e.g., top theaters, movie sales).
+  - **Kafka**: Streams real-time ticket purchase events.
+  - **Frontend (React)**: Displays theaters, movies, and sales statistics.
+</details>
 
 ## **📦 Setup & Installation**
 
