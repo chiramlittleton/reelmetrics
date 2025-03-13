@@ -152,10 +152,14 @@ This project is licensed under the MIT License.
 
 Below are some screenshots of the application in action.
 
-#### 🎭 Theaters List
-![Theaters List](./screenshots/theaters_list.png)
+#### Theaters List
+<img src="./screenshots/theaters_list.png" alt="Theaters List" width="600"/>
 
-#### 🏆 Top Theater by Revenue
-![Top Theater](./screenshots/top_theater.png)
+#### Sales
+<img src="./screenshots/sales.png" alt="Sales" width="600"/>
 
+#### Top Theater by Revenue
+<img src="./screenshots/top_theater.png" alt="Top Theater" width="600"/>
 
+#### CI/CD
+<img src="./screenshots/github.png" alt="CD/CD" width="600"/>
