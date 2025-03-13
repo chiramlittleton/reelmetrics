@@ -44,6 +44,10 @@ graph TD
 - Generates **random ticket sales events**.
 - Publishes events to **Kafka**.
 
+### **Event Consumer**
+- Listens for Kafka events in real time.
+- Writes ticket sales to PostgreSQL and updates Redis for fast queries.
+
 ### **Backends (Python & Go)**
 - **Fetch theaters & movie sales from PostgreSQL**.
 - **Cache results in Redis** to optimize performance.
@@ -56,7 +60,7 @@ graph TD
 
 ### **1️⃣ Clone the Repository**
 ```bash
-git clone https://github.com/yourusername/reelmetrics.git
+git clone https://github.com/chiramlittleton/reelmetrics.git
 cd reelmetrics
 ```
 
@@ -88,23 +92,52 @@ curl -X GET http://localhost:8002/top-theater/2024-05-10
 ```
 
 ## **🔧 Development**
-### **Run Python Backend Locally**
+#### **Run Python Backend Locally**
 ```bash
 cd backend_python
 uvicorn main:app --host 0.0.0.0 --port 8001 --reload
 ```
 
-### **Run Go Backend Locally**
+#### **Run Go Backend Locally**
 ```bash
 cd backend_go
 go run main.go
 ```
 
-### **Run Event Generator**
+#### **Run Event Generator**
 ```bash
 cd utils
 python event_simulator.py
 ```
+
+## Continuous Integration & Deployment (CI/CD)
+
+ReelMetrics uses **GitHub Actions** to automate testing, building, and deployment of the project. The CI/CD pipeline ensures that every commit and pull request maintains code quality and deploys updates seamlessly.
+
+#### **CI/CD Workflow Overview**
+- **Linting & Testing**: Runs unit tests and linter checks for both the **Go** and **Python** backends. (Linting not yet implemented)
+- **Docker Build & Push**: Builds Docker images for the services and pushes them to a container registry.
+
+#### **GitHub Actions Workflow**
+The **CI/CD pipeline** is triggered on:
+- **Pushes to `main`** – Runs tests and builds the project.
+- **Pull Requests** – Ensures all code changes meet quality standards before merging.
+- **Tag Creation** – Builds and pushes a new Docker image for deployment.
+
+#### **How to Manually Trigger a Workflow**
+To manually trigger a CI/CD workflow:
+1. Navigate to the **Actions** tab in the GitHub repository.
+2. Select the desired workflow.
+3. Click **Run workflow** and provide any necessary parameters.
+
+#### **Workflow Configuration**
+The GitHub Actions workflows are defined in `.github/workflows/`. 
+
+#### **Future Enhancements**
+- Implement **automated rollbacks** for failed deployments.
+- Integrate **Kubernetes deployment** for scalable orchestration.
+- Enable **branch-specific deployments** for development and production environments.
+
 
 ## **📌 Next Steps**
 - Add **user authentication** to restrict access.
