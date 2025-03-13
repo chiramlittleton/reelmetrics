@@ -17,7 +17,7 @@ graph TD;
 ```
 
 <details>
-  <summary>## 🛠️ Tech Stack (Click to Expand)</summary>
+  <summary><h2>🛠️ Tech Stack (Click to Expand)</h2></summary>
 
   - **Backend (Python - FastAPI)**: Exposes APIs to fetch theaters & movie sales.
   - **Backend (Go)**: Alternative implementation for fetching the same data.
