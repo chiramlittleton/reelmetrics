@@ -20,7 +20,7 @@ func GetTopTheater(w http.ResponseWriter, r *http.Request) {
 
 	redisKey := "sales_date:" + date
 
-	// ✅ Fetch sales from Redis using LRANGE
+	// Fetch sales from Redis using LRANGE
 	salesList, err := redis.RedisClient.LRange(redis.RedisCtx, redisKey, 0, -1).Result()
 	if err != nil || len(salesList) == 0 {
 		log.Printf("❌ No sales data found in Redis for date %s", date)
@@ -31,7 +31,7 @@ func GetTopTheater(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("✅ Found sales data in Redis for %s", date)
 
-	// ✅ Process sales data to calculate top revenue
+	// Process sales data to calculate top revenue
 	theaterRevenue := make(map[int]float64) // Store revenue by theater_id
 
 	for _, saleJSON := range salesList {
@@ -60,7 +60,7 @@ func GetTopTheater(w http.ResponseWriter, r *http.Request) {
 		theaterRevenue[theaterID] += revenue
 	}
 
-	// ✅ Find the top theater by revenue
+	// Find the top theater by revenue
 	var topTheaterID int
 	var maxRevenue float64
 
@@ -71,14 +71,14 @@ func GetTopTheater(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// ✅ If no valid sales exist, return a "no data" message
+	// If no valid sales exist, return a "no data" message
 	if topTheaterID == 0 {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(`{"message": "No sales data available"}`))
 		return
 	}
 
-	// ✅ Fetch the theater name (either from Redis or PostgreSQL)
+	// Fetch the theater name (either from Redis or PostgreSQL)
 	theaterName, err := getTheaterName(topTheaterID)
 	if err != nil {
 		log.Printf("❌ Failed to fetch theater name for ID %d", topTheaterID)
@@ -87,7 +87,7 @@ func GetTopTheater(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// ✅ Return the top theater data
+	// Return the top theater data
 	result := map[string]interface{}{
 		"theater": theaterName,
 		"revenue": maxRevenue,
@@ -104,7 +104,7 @@ func getTheaterName(theaterID int) (string, error) {
 	redisKey := fmt.Sprintf("theater:%d", theaterID)
 	theaterName, err := redis.RedisClient.Get(redis.RedisCtx, redisKey).Result()
 	if err == nil {
-		return theaterName, nil // ✅ Return from Redis if available
+		return theaterName, nil // Return from Redis if available
 	}
 
 	// If not found in Redis, query PostgreSQL

@@ -10,7 +10,7 @@ By separating event ingestion, storage, caching, and APIs, the system ensures ef
 
 ```mermaid
 graph TD
-    A("Event Generator") -- Ticket Sales --> B("Kafka")
+    A("Event Generator") -- Simulated Ticket Sales --> B("Kafka")
     B -- Events --> C("Event Consumer")
     C -- Updates --> D["Postgres"] & E["Redis"]
     D -- Queries --- F("Backend (Go)")
@@ -41,7 +41,7 @@ graph TD
 ## **🧩 Project Components**
 
 ### **Event Generator**
-- Generates **random ticket sales events**.
+- Generates **simulated random ticket sales events**.
 - Publishes events to **Kafka**.
 
 ### **Event Consumer**
@@ -105,6 +105,7 @@ go run main.go
 ```
 
 #### **Run Event Generator**
+Add new sales data to the system
 ```bash
 cd utils
 python event_simulator.py

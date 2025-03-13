@@ -22,7 +22,7 @@ func ConnectRedis() {
 	log.Println("✅ Connected to Redis")
 }
 
-// ✅ Initializes Redis with existing sales data
+// Initializes Redis with existing sales data
 func InitializeRedisCache() {
 	log.Println("🔄 Initializing Redis with existing sales data...")
 
@@ -66,19 +66,19 @@ func InitializeRedisCache() {
 
 		saleJSON, _ := json.Marshal(saleData)
 
-		// ✅ Store individual sale (if missing)
+		// Store individual sale (if missing)
 		redisKeySale := fmt.Sprintf("sale:%d", saleID)
 		exists, _ := RedisClient.Exists(RedisCtx, redisKeySale).Result()
 		if exists == 0 {
 			RedisClient.Set(RedisCtx, redisKeySale, saleJSON, 0)
 		}
 
-		// ✅ Append to sales by theater (ensure no duplicates)
+		// Append to sales by theater (ensure no duplicates)
 		redisKeyTheater := fmt.Sprintf("sales_theater:%d", theaterID)
 		RedisClient.LRem(RedisCtx, redisKeyTheater, 0, saleJSON) // Remove if exists
 		RedisClient.RPush(RedisCtx, redisKeyTheater, saleJSON)
 
-		// ✅ Append to sales by date (ensure no duplicates)
+		// Append to sales by date (ensure no duplicates)
 		redisKeyDate := fmt.Sprintf("sales_date:%s", saleDate)
 		RedisClient.LRem(RedisCtx, redisKeyDate, 0, saleJSON) // Remove if exists
 		RedisClient.RPush(RedisCtx, redisKeyDate, saleJSON)

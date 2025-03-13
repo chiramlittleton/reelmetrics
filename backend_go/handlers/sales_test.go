@@ -70,6 +70,7 @@ func TestGetMoviesByTheater_CacheHit(t *testing.T) {
 	assert.NoError(t, mockRedisClient.ExpectationsWereMet())
 }
 
+// This test requires more setup to get working
 func TestGetMoviesByTheater_CacheMiss_DBQuery(t *testing.T) {
 	t.Skip("Skipping this test temporarily")
 

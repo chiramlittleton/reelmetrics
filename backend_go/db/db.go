@@ -10,7 +10,6 @@ import (
 // DB holds the database connection
 var DB *sql.DB
 
-// ConnectDB initializes the PostgreSQL connection
 func ConnectDB() {
 	var err error
 	DB, err = sql.Open("pgx", "postgres://user:password@postgres:5432/reelmetrics_db?sslmode=disable")

@@ -32,8 +32,8 @@ producer = KafkaProducer(
 
 def generate_ticket_purchase():
     """Generate a random ticket purchase event."""
-    theater_name = random.choice(THEATERS)  # Renamed to match database schema
-    movie_title = random.choice(MOVIES)  # Renamed to match database schema
+    theater_name = random.choice(THEATERS)  
+    movie_title = random.choice(MOVIES)  
     sale_date = random.choice(DATES)
     ticket_price = round(random.uniform(*TICKET_PRICE_RANGE), 2)  # Random ticket price between $5 - $15
     tickets_sold = random.randint(1, 5)  # Random number of tickets per transaction (1-5)

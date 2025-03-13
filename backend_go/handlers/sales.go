@@ -19,7 +19,7 @@ func GetMoviesByTheater(w http.ResponseWriter, r *http.Request) {
 
 	cacheKey := fmt.Sprintf("sales_theater:%s", theaterID)
 
-	// ✅ Try to get data from Redis first
+	// Try to get data from Redis first
 	salesList, err := redis.RedisClient.LRange(redis.RedisCtx, cacheKey, 0, -1).Result()
 	if err == nil && len(salesList) > 0 {
 		log.Printf("✅ Cache hit for %s", cacheKey)
@@ -43,7 +43,7 @@ func GetMoviesByTheater(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("❌ Cache miss for %s, querying PostgreSQL...", cacheKey)
 
-	// ❌ If Redis cache is empty, query PostgreSQL
+	// If Redis cache is empty, query PostgreSQL
 	query := `
 		SELECT m.title AS movie_title, s.sale_date, SUM(s.tickets_sold * s.ticket_price) AS revenue
 		FROM sales s
@@ -76,11 +76,11 @@ func GetMoviesByTheater(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	// ✅ Store result in Redis for future queries
+	// Store result in Redis for future queries
 	jsonData, _ := json.Marshal(movies)
 	redis.RedisClient.RPush(redis.RedisCtx, cacheKey, jsonData)
 
-	// ✅ Return the data to the client
+	// Return the data to the client
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(jsonData)
 }

@@ -17,7 +17,7 @@ REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
 
 # Retry configuration
 MAX_RETRIES = 5
-RETRY_DELAY = 5  # seconds
+RETRY_DELAY = 5  
 
 def connect_to_postgres():
     """Attempt to establish a connection to PostgreSQL with retries."""
@@ -102,10 +102,10 @@ def store_sale_in_redis(sale_id, theater_id, sale_date, sale_data):
 
     sale_json = json.dumps(sale_data)
 
-    # ✅ Append to sales by theater
+    # Append to sales by theater
     REDIS_CONN.rpush(redis_key_theater, sale_json)
 
-    # ✅ Append to sales by date
+    # Append to sales by date
     REDIS_CONN.rpush(redis_key_date, sale_json)
 
     print(f"✅ Sale stored in Redis lists: {redis_key_theater} & {redis_key_date}")

@@ -39,7 +39,7 @@ function App() {
       setSelectedTheater(theaterId);
       const response = await axios.get(`${BACKENDS[backend]}/theaters/${theaterId}/movies`);
 
-      // ✅ Ensure we correctly extract sales data (supports both Go & Python backends)
+      // Ensure we correctly extract sales data (supports both Go & Python backends)
       const salesArray = Array.isArray(response.data?.data) ? response.data.data : response.data;
 
       const salesByDate = {};
@@ -49,10 +49,10 @@ function App() {
           salesByDate[saleDate] = [];
         }
         salesByDate[saleDate].push({
-          title: sale.movie_title, // ✅ Ensure correct field name
-          tickets_sold: sale.tickets_sold, // ✅ Store ticket count
-          ticket_price: sale.ticket_price, // ✅ Store ticket price
-          revenue: sale.tickets_sold * sale.ticket_price, // ✅ Compute revenue
+          title: sale.movie_title, 
+          tickets_sold: sale.tickets_sold, 
+          ticket_price: sale.ticket_price, 
+          revenue: sale.tickets_sold * sale.ticket_price, 
         });
       });
 
@@ -64,14 +64,14 @@ function App() {
 
   const fetchTopTheater = async (saleDate) => {
     try {
-      setSelectedDate(saleDate); // Update selected date
+      setSelectedDate(saleDate); 
       const response = await axios.get(`${BACKENDS[backend]}/top-theater/${saleDate}`);
 
       if (response.data?.theater && response.data?.revenue !== undefined) {
-        return response.data; // ✅ Correctly return structured response
+        return response.data; 
       }
 
-      return { message: "No sales data available" }; // ✅ Handle missing data case
+      return { message: "No sales data available" }; 
     } catch (error) {
       console.error("Error fetching top theater", error);
       return { message: "Error fetching data" };
