@@ -9,16 +9,33 @@ ReelMetrics follows a microservices-based, event-driven design, where Kafka stre
 By separating event ingestion, storage, caching, and APIs, the system ensures efficient data flow, low-latency queries, and scalability.
 
 ```mermaid
-graph TD;
-    A[Event Generator] -->|Sends ticket sales events| B[Kafka];
-    B -->|Forwards events| C[Event Consumer];
-    C -->|Writes sales data| D[PostgreSQL];
-    C -->|Updates cache| E[Redis];
-    D & E -->|Provide data| F[Python Backend];
-    D & E -->|Provide data| G[Go Backend];
-    F & G -->|Return data| H[Frontend];
-    H -->|User selects backend| F;
-    H -->|User selects backend| G;
+flowchart TD
+%% Nodes
+    A("fab:fa-youtube Starter Guide")
+    B("fab:fa-youtube Make Flowchart")
+    n1@{ icon: "fa:gem", pos: "b", h: 24}
+    C("fa:fa-book-open Learn More")
+    D{"Use the editor"}
+    n2(Many shapes)@{ shape: delay}
+    E(fa:fa-shapes Visual Editor)
+    F("fa:fa-chevron-up Add node in toolbar")
+    G("fa:fa-comment-dots AI chat")
+    H("fa:fa-arrow-left Open AI in side menu")
+    I("fa:fa-code Text")
+    J(fa:fa-arrow-left Type Mermaid syntax)
+
+%% Edge connections between nodes
+    A --> B --> C --> n1 & D & n2
+    D -- Build and Design --> E --> F
+    D -- Use AI --> G --> H
+    D -- Mermaid js --> I --> J
+
+%% Individual node styling. Try the visual editor toolbar for easier styling!
+    style E color:#FFFFFF, fill:#AA00FF, stroke:#AA00FF
+    style G color:#FFFFFF, stroke:#00C853, fill:#00C853
+    style I color:#FFFFFF, stroke:#2962FF, fill:#2962FF
+
+%% You can add notes with two "%" signs in a row!
 ```
 
 ## 🛠️ Tech Stack
@@ -32,15 +49,15 @@ graph TD;
 
 ## **🧩 Project Components**
 
-### **🎟️  Event Generator**
+### **Event Generator**
 - Generates **random ticket sales events**.
 - Publishes events to **Kafka**.
 
-### **🛠️ Backends (Python & Go)**
+### **Backends (Python & Go)**
 - **Fetch theaters & movie sales from PostgreSQL**.
 - **Cache results in Redis** to optimize performance.
 
-### **🌐 Frontend (React)**
+### **Frontend (React)**
 - Lets users select between **Python & Go backends**.
 - Displays **real-time revenue statistics**.
 
@@ -116,3 +133,5 @@ Below are some screenshots of the application in action.
 
 #### 🏆 Top Theater by Revenue
 ![Top Theater](./screenshots/top_theater.png)
+
+
