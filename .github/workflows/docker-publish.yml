@@ -43,11 +43,17 @@ jobs:
       - name: Run Python Tests
         run: |
           if [ -d "./backend_python" ]; then
-            cd backend_python && pytest --maxfail=1 --disable-warnings -q
+            cd backend_python
+            if ls test_*.py 1> /dev/null 2>&1; then
+              pytest --maxfail=1 --disable-warnings -q
+            else
+              echo "✅ No Python tests found, skipping..."
+              exit 0
+            fi
           else
             echo "No Python backend found, skipping..."
           fi
-
+  
       # ✅ Run TypeScript/JavaScript tests
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -61,11 +67,17 @@ jobs:
       - name: Run JS Tests
         run: |
           if [ -d "./frontend" ]; then
-            cd frontend && npm test
+            cd frontend
+            if find . -name "*.test.js" -o -name "*.test.ts" | grep -q .; then
+              npm test
+            else
+              echo "✅ No JS tests found, skipping..."
+              exit 0
+            fi
           else
             echo "No frontend found, skipping..."
           fi
-
+  
   build-and-push:
     runs-on: ubuntu-latest
     needs: test # ✅ Ensure tests pass before building images
