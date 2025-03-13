@@ -7,8 +7,66 @@ on:
       - main
 
 jobs:
+  test:
+    name: Run Unit Tests for All Services
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      # ✅ Run Go tests
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21' # Update as needed
+      - name: Run Go Tests
+        run: |
+          if [ -d "./backend_go" ]; then
+            cd backend_go && go mod tidy && go test ./... -v
+          else
+            echo "No Go backend found, skipping..."
+          fi
+
+      # ✅ Run Python tests
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10' # Update as needed
+      - name: Install Python Dependencies
+        run: |
+          if [ -f "requirements.txt" ]; then
+            pip install -r requirements.txt
+          fi
+      - name: Run Python Tests
+        run: |
+          if [ -d "./backend_python" ]; then
+            cd backend_python && pytest --maxfail=1 --disable-warnings -q
+          else
+            echo "No Python backend found, skipping..."
+          fi
+
+      # ✅ Run TypeScript/JavaScript tests
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18' # Update as needed
+      - name: Install JS Dependencies
+        run: |
+          if [ -f "package.json" ]; then
+            npm install
+          fi
+      - name: Run JS Tests
+        run: |
+          if [ -d "./frontend" ]; then
+            cd frontend && npm test
+          else
+            echo "No frontend found, skipping..."
+          fi
+
   build-and-push:
     runs-on: ubuntu-latest
+    needs: test # ✅ Ensure tests pass before building images
     strategy:
       matrix:
         service: [backend_python, backend_go, event_consumer, frontend]
