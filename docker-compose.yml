@@ -35,7 +35,7 @@ services:
     restart: always
     ports:
       - "9092:9092"
-      - "9093:9093"  # Expose another port for external access
+      - "9093:9093"
     environment:
       KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
       ALLOW_PLAINTEXT_LISTENER: "yes"
@@ -51,9 +51,10 @@ services:
       KAFKA_CFG_SOCKET_REQUEST_MAX_BYTES: 200000000
     depends_on:
       - zookeeper
-                  
+
   backend_python:
     build: ./backend_python
+    image: chiramlittleton/reelmetrics-backend-python:latest
     container_name: backend_python
     restart: always
     depends_on:
@@ -69,6 +70,7 @@ services:
 
   backend_go:
     build: ./backend_go
+    image: chiramlittleton/reelmetrics-backend-go:latest
     container_name: backend_go
     restart: always
     depends_on:
@@ -84,6 +86,7 @@ services:
 
   event_consumer:
     build: ./event_consumer
+    image: chiramlittleton/reelmetrics-event-consumer:latest
     container_name: event_consumer
     restart: always
     depends_on:
@@ -100,6 +103,7 @@ services:
 
   frontend:
     build: ./frontend
+    image: chiramlittleton/reelmetrics-frontend:latest
     container_name: frontend
     restart: always
     depends_on:
